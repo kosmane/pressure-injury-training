@@ -228,6 +228,70 @@ body.splash-open{overflow:hidden}
 .splash-note{font-size:14px;color:#557087}
 @media (max-width:900px){.splash-card{grid-template-columns:1fr}.splash-visual{max-height:48vh}.splash-content{padding:24px 20px 22px}.splash-sub{font-size:16px}}
 
+
+/* 2026-11-09 mobile accessibility and viewport repairs */
+#splashScreen {
+  align-items: flex-start; justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+#splashScreen .splash-card {flex:0 0 auto; max-width:1120px;}
+#splashScreen .splash-visual img {object-position:center;}
+#splashStartBtn {touch-action:manipulation;}
+@media (max-width:900px){
+  #splashScreen .splash-card {width:100%;max-width:480px;grid-template-columns:minmax(0,1fr);border-radius:20px;}
+  #splashScreen .splash-visual {height:clamp(150px,32dvh,245px);min-height:0;max-height:none;overflow:hidden;}
+  #splashScreen .splash-visual img {object-fit:contain;width:100%;height:100%;}
+  #splashScreen .splash-content {padding:16px 17px 18px;gap:11px;}
+  #splashScreen .splash-title {font-size:clamp(24px,6.6vw,33px);line-height:1.2;margin:0;}
+  #splashScreen .splash-sub {font-size:14px;line-height:1.35;margin:0;}
+  #splashScreen .splash-kicker {font-size:12px;padding:5px 10px;}
+  #splashScreen .splash-credit-box {padding:10px 12px;gap:6px;border-radius:12px;}
+  #splashScreen .splash-credit-title {font-size:13px;}
+  #splashScreen .splash-credit {font-size:12.5px;line-height:1.42;}
+  #splashScreen .splash-actions {display:grid;grid-template-columns:1fr;gap:6px;}
+  #splashStartBtn {width:100%;min-width:0;min-height:48px;padding:11px 12px;font-size:16px;}
+  #splashScreen .splash-note {font-size:11px;line-height:1.35;}
+}
+@media (max-width:340px){
+  #splashScreen {padding:8px 8px max(10px, env(safe-area-inset-bottom));}
+  #splashScreen .splash-content {padding:13px 12px 14px;gap:8px;}
+  #splashScreen .splash-visual {height:clamp(145px,29dvh,180px);}
+  #splashScreen .splash-title {font-size:24px;}
+  #splashScreen .splash-credit {font-size:12px;}
+  #splashScreen .splash-sub {font-size:13px;}
+}
+@media (orientation:landscape) and (max-height:540px) and (min-width:600px){
+  #splashScreen {padding:8px 10px;}
+  #splashScreen .splash-card {width:100%;max-width:1000px;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);}
+  #splashScreen .splash-visual {height:auto;min-height:0;max-height:none;}
+  #splashScreen .splash-visual img {width:100%;height:100%;object-fit:contain;}
+  #splashScreen .splash-content {padding:12px 15px;gap:7px;}
+  #splashScreen .splash-title {font-size:clamp(21px,3.5vw,29px);}
+  #splashScreen .splash-sub {font-size:12px;}
+  #splashScreen .splash-credit-box {padding:8px 10px;gap:4px;}
+  #splashScreen .splash-credit-title,#splashScreen .splash-credit {font-size:11px;line-height:1.3;}
+  #splashStartBtn {min-height:42px;padding:7px;font-size:14px;}
+  #splashScreen .splash-note {display:none;}
+}
+/* On narrow phones every question location can be reached by swiping or edge arrows. */
+#clinicalPanLeft,#clinicalPanRight {
+ display:none;position:absolute;z-index:6;top:57%;transform:translateY(-50%);
+ border:1px solid #e5f7ff9e;background:#082f4cc9;color:#fff;
+ width:42px;height:54px;border-radius:13px;align-items:center;justify-content:center;
+ font-size:28px;font-weight:800;cursor:pointer;touch-action:manipulation;
+ box-shadow:0 4px 18px #0008;backdrop-filter:blur(3px)
+}
+#clinicalPanLeft {left:4px;} #clinicalPanRight {right:4px;}
+#clinicalPanLeft:focus-visible,#clinicalPanRight:focus-visible {outline:3px solid #ffe18b;outline-offset:2px;}
+@media(min-width:621px){#clinicalPanLeft,#clinicalPanRight {display:none!important}}
+@media (max-width:360px){#clinicalTitle {max-width:70vw;} .clinical-spot {width:46px;height:46px}}
+/* Height-bounded overlays, especially on phone landscape. */
+#nurseAward {overflow-y:auto;overscroll-behavior:contain;}
+.awardCard {max-height:calc(100dvh - 24px);overflow-y:auto;}
+@media (max-height:440px){.awardTrophy {height:92px;} .awardCard h2 {margin:2px 0 4px;} .awardCard button {min-height:42px;} }
+
 </style>
 </head>
 <body class="splash-open">
@@ -267,6 +331,8 @@ body.splash-open{overflow:hidden}
     <button type="button" data-go="down" aria-label="אחורה">↓</button>
     <button type="button" data-go="right" aria-label="ימינה">→</button>
   </div>
+  <button type="button" id="clinicalPanLeft" aria-label="הזז את המבט שמאלה כדי לראות עיגולים נוספים" title="הזזה שמאלה">‹</button>
+  <button type="button" id="clinicalPanRight" aria-label="הזז את המבט ימינה כדי לראות עיגולים נוספים" title="הזזה ימינה">›</button>
 </div>
 <div id="nurseAward" role="dialog" aria-modal="true" aria-labelledby="awardTitle">
   <div class="awardCard">
@@ -575,7 +641,14 @@ init();
  function photoGeometry(img,zoom,xShift,yShift){const w=canvas.width,h=canvas.height;const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight)*zoom,dw=img.naturalWidth*scale,dh=img.naturalHeight*scale;const rx=Math.max(0,(dw-w)/2),ry=Math.max(0,(dh-h)/2);const dx=clamp(xShift*rx*1.12,-rx,rx),dy=clamp(yShift*ry*1.08,-ry,ry);return {dw,dh,left:(w-dw)/2-dx,top:(h-dh)/2-dy};}
  function drawImage(img,alpha,zoom,xShift,yShift){if(!img.complete||!img.naturalWidth||alpha<.003)return;const g=photoGeometry(img,zoom,xShift,yShift);context.globalAlpha=alpha;context.drawImage(img,g.left,g.top,g.dw,g.dh)}
  function updateSpotPositions(){if(phase!=='risk'&&phase!=='match')return;if(freeMode||!images[3].naturalWidth)return;let geo=photoGeometry(images[3],1.065,panX*.72+side*.32,panY*.49),dpr=canvas.width/Math.max(1,innerWidth);
-  spots.querySelectorAll('.clinical-spot').forEach(b=>{const p=anchors[b.dataset.point];if(!p)return;const x=(geo.left+p.x*geo.dw)/dpr,y=(geo.top+p.y*geo.dh)/dpr;b.style.left=x+'px';b.style.top=y+'px';const outside=x<15||x>innerWidth-15||y<15||y>innerHeight-15;b.style.visibility=outside?'hidden':'visible';});
+  spots.querySelectorAll('.clinical-spot').forEach(b=>{const p=anchors[b.dataset.point];if(!p)return;const x=(geo.left+p.x*geo.dw)/dpr,y=(geo.top+p.y*geo.dh)/dpr;b.style.left=x+'px';b.style.top=y+'px';const outside=x<23||x>innerWidth-23||y<23||y>innerHeight-23;b.style.visibility=outside?'hidden':'visible';});
+  const l=$('clinicalPanLeft'),r=$('clinicalPanRight');
+  if(l&&r){
+    const unanswered=[...spots.querySelectorAll('.clinical-spot:not(.answered)')];
+    const narrow=innerWidth<=620&&!freeMode;
+    l.style.display=narrow&&unanswered.some(b=>parseFloat(b.style.left)<26)?'flex':'none';
+    r.style.display=narrow&&unanswered.some(b=>parseFloat(b.style.left)>innerWidth-26)?'flex':'none';
+  }
  }
  function draw(){if(!visible)return;resize();context.globalAlpha=1;context.fillStyle='#071827';context.fillRect(0,0,canvas.width,canvas.height);if(!allReady())return;
   const walking=phase==='walking';const d=walking?3*smooth(elapsed/WALK_DURATION):(freeMode?depth:3);
@@ -626,8 +699,11 @@ init();
  $('startBtn').onclick=start;
  $('playAgain').onclick=()=>{reset();document.body.classList.remove('clinical-immersed');scene.classList.remove('active');visible=false;phase='idle'};
  $('restart1').onclick=start;
- function toggleNav(){if(phase!=='risk'&&phase!=='match')return;freeMode=!freeMode;spots.style.display=freeMode?'none':'';$('clinicalNavPad').classList.toggle('show',freeMode);$('clinicalNavToggle').textContent=freeMode?'חזרה לשאלות':'סיור חופשי ◎';$('clinicalNavToggle').setAttribute('aria-pressed',String(freeMode));if(!freeMode){depth=targetDepth=3;side=targetSide=panX=panY=0;renderDots();}else notify('השתמשו בחצים וגררו את התמונה כדי לנוע בחדר',2800)}
+ function toggleNav(){if(phase!=='risk'&&phase!=='match')return;freeMode=!freeMode;
+  $('clinicalPanLeft').style.display='none';$('clinicalPanRight').style.display='none';spots.style.display=freeMode?'none':'';$('clinicalNavPad').classList.toggle('show',freeMode);$('clinicalNavToggle').textContent=freeMode?'חזרה לשאלות':'סיור חופשי ◎';$('clinicalNavToggle').setAttribute('aria-pressed',String(freeMode));if(!freeMode){depth=targetDepth=3;side=targetSide=panX=panY=0;renderDots();}else notify('השתמשו בחצים וגררו את התמונה כדי לנוע בחדר',2800)}
  $('clinicalNavToggle').onclick=toggleNav;
+ $('clinicalPanLeft').onclick=()=>{panX=clamp(panX-.58,-1.5,1.5);draw()};
+ $('clinicalPanRight').onclick=()=>{panX=clamp(panX+.58,-1.5,1.5);draw()};
  const go={up:[.30,0],down:[-.30,0],left:[0,-.22],right:[0,.22]};document.querySelectorAll('#clinicalNavPad [data-go]').forEach(btn=>btn.onclick=()=>{const n=go[btn.dataset.go];targetDepth=clamp(targetDepth+n[0],0,3);targetSide=clamp(targetSide+n[1],-1,1)});
  canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,{x:e.clientX,y:e.clientY});hint.classList.remove('show')});
  canvas.addEventListener('pointermove',e=>{const old=touches.get(e.pointerId);if(!old)return;const dx=e.clientX-old.x,dy=e.clientY-old.y;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size===1){panX=clamp(panX-dx/Math.max(200,innerWidth)*1.7,-1.5,1.5);panY=clamp(panY-dy/Math.max(200,innerHeight)*1.15,-1,1)}else if(freeMode){targetDepth=clamp(targetDepth-dy/Math.max(200,innerHeight)*2.2,0,3);targetSide=clamp(targetSide+dx/Math.max(200,innerWidth)*1.9,-1,1)}draw()});
